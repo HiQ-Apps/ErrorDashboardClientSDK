@@ -12,14 +12,12 @@ interface InitializeClient {
 export class ErrorDashboardClient {
   private clientId: string;
   private clientSecret: string;
-  private baseUrl: string;
   private window: Window;
   private configs: Configs;
 
   constructor(obj: InitializeClient) {
     this.clientId = obj.clientId;
     this.clientSecret = obj.clientSecret;
-    this.baseUrl = baseUrl;
     this.window = obj.window;
     this.configs = configs;
   }
@@ -93,7 +91,7 @@ export class ErrorDashboardClient {
       clientSecret: this.clientSecret,
       clientId: this.clientId,
       method: "POST",
-      endpoint: `${this.baseUrl}/errors`,
+      endpoint: `${baseUrl}/errors`,
       body: buildError,
     });
 

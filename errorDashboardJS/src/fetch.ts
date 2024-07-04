@@ -17,8 +17,7 @@ export const customFetch = async ({
   endpoint,
   body,
 }: CustomFetchProps) => {
-  const baseUrl = "https://higuard.io/api";
-  const url = new URL(endpoint, baseUrl);
+  const url = new URL(endpoint);
 
   url.searchParams.append("client_id", clientId);
 
