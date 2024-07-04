@@ -79,7 +79,25 @@ export class ErrorDashboardClient {
       });
     }
 
+    let user_affected: string | undefined;
+
+    // Check if user
+    try {
+      if (this.window.document.cookie) {
+        // EG: access_token=1234; path=/; expires=Wed, 09 Jun 2021 10:18:14 GMT; HttpOnly; SameSite=Lax
+        if (this.window.document.cookie.includes(configs.authContext)) {
+          user_affected = this.window.document.cookie
+            .split("; ")
+            .find((row) => row.startsWith(`${configs.authContext}=`))
+            ?.split("=")[1];
+        }
+      }
+    } catch (err) {
+      user_affected = undefined;
+    }
+
     const buildError: CreateErrorRequestType = {
+      user_affected: user_affected,
       stack_trace: errorStack,
       path: errorPath,
       line: errorLineNum as number,
