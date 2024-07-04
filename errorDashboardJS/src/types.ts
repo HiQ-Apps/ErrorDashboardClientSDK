@@ -3,8 +3,6 @@ export type Tag = { tagKey: string; tagValue: Primitive };
 
 export type CreateErrorRequestType = {
   user_affected?: string;
-  path?: string;
-  line: number;
   message: string;
   stack_trace?: string;
   tags?: Tag[];
