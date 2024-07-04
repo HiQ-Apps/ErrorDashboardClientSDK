@@ -39,8 +39,8 @@ export class ErrorDashboardClient {
     }
 
     const buildError: CreateErrorRequestType = {
-      user_affected: user_affected,
-      stack_trace: errorStack,
+      userAffected: user_affected,
+      stackTrace: errorStack,
       message: message,
       tags: tags,
     };
