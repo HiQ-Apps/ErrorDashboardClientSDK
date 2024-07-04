@@ -9,14 +9,21 @@ interface CustomFetchProps {
   body?: CreateErrorRequestType;
 }
 
-export const customFetch = async ({
+type ResponseType = {
+  isSuccess?: boolean;
+  isError?: boolean;
+};
+
+export const errorDashboardFetch = async ({
   clientSecret,
   clientId,
   method,
   headers = {},
   endpoint,
   body,
-}: CustomFetchProps) => {
+}: CustomFetchProps): Promise<ResponseType> => {
+  let isError = false;
+  let isSuccess = false;
   const url = new URL(endpoint);
 
   url.searchParams.append("client_id", clientId);
@@ -33,13 +40,13 @@ export const customFetch = async ({
     body: body ? JSON.stringify(body) : undefined,
   };
 
-  try {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      throw new Error(`Higuard error failed to create`);
-    }
-    return await response.json();
-  } catch (error) {
-    throw new Error(`Fetch error: ${error}`);
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    isError = true;
+  } else {
+    isSuccess = true;
   }
+  isError = true;
+
+  return { isSuccess, isError };
 };

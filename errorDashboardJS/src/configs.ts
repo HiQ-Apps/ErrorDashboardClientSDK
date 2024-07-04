@@ -1,9 +1,9 @@
 export interface Configs {
-  tagColor: string;
   authContext: string;
+  verbose: boolean;
 }
 
 export const configs = {
-  tagColor: "#098585",
   authContext: "access_token",
+  verbose: false,
 };
