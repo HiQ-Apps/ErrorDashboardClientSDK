@@ -12,6 +12,10 @@
   "dependencies": {
     "@types/node": "^20.14.9",
     "dotenv": "^16.4.5",
+    "luxon": "^3.4.4",
     "typescript": "^5.5.3"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.4.2"
   }
 }

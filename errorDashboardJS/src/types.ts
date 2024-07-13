@@ -13,3 +13,7 @@ export type CreateErrorDto = {
   message: string;
   tags?: Tag[];
 };
+
+export type DeduplicateType = {
+  
+}
