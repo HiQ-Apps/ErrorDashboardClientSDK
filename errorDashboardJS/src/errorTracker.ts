@@ -1,23 +1,33 @@
-// Tracker Dict EG: { "Error message": [1720964158,1720964168,1720964178,1720964188],
-// "Error message 2": [1720964158,1720964168,1720964178,1720964188] },
-// "Error message 3": [1720964158,1720964168,1720964178,1720964188] }
-// }
-
+/**
+ * Class representing an error tracker.
+ * The errorTracker is a map where each key is an error message and value is an array of timestamps
+ * when the error occurred. This then allows us to check if error is duplicate and to clean old timestamps
+ * EG:
+ * {
+ *   "Error message": [1720964158, 1720964168, 1720964178, 1720964188],
+ *   "Error message 2": [1720964158, 1720964168, 1720964178, 1720964188],
+ *   "Error message 3": [1720964158, 1720964168, 1720964178, 1720964188]
+ * }
+ */
 export class ErrorTracker {
   public errorTracker: Map<string, number[]>;
   public maxAge: number;
 
-  // Initialize the errorTracker
-  // @maxAge: How long should the error be stored in memory (in milliseconds)
+  /**
+   * Initialize the errorTracker.
+   * @param {number} maxAge - How long should the error be stored in memory (in milliseconds).
+   */
   constructor(maxAge: number) {
     this.errorTracker = new Map();
     this.maxAge = maxAge;
   }
 
-  // Check if error is duplicate in errorTracker map
-  // @message: Error message title
-  // @timestamp: Timestamp of the error
-  // @returns: boolean
+  /**
+   * Check if an error is a duplicate in the errorTracker map.
+   * @param {string} message - Error message title.
+   * @param {number} timestamp - Timestamp of the error.
+   * @returns {boolean} - Returns true if the error is a duplicate, false otherwise.
+   */
   duplicateCheck(message: string, timestamp: number): boolean {
     if (this.errorTracker.has(message)) {
       const timestamps = this.errorTracker.get(message);
@@ -31,9 +41,12 @@ export class ErrorTracker {
     return false;
   }
 
-  // Add timestamp to errorTracker map
-  // @message: Error message title
-  // @timestamp: Timestamp of the error since UNIX epoch
+  /**
+   * Add a timestamp to the errorTracker map.
+   * @param {string} message - Error message title.
+   * @param {number} timestamp - Timestamp of the error since UNIX epoch.
+   * @returns {void}
+   */
   addTimestamp(message: string, timestamp: number): void {
     if (!this.errorTracker.has(message)) {
       this.errorTracker.set(message, []);
@@ -41,8 +54,11 @@ export class ErrorTracker {
     this.errorTracker.get(message)?.push(timestamp);
   }
 
-  // Clean old timestamps from errorTracker map
-  // @currentTimestamp: Current date timestamp since UNIX epoch
+  /**
+   * Clean old timestamps from the errorTracker map.
+   * @param {number} currentTimestamp - Current date timestamp since UNIX epoch.
+   * @returns {void}
+   */
   cleanOldTimestamps(currentTimestamp: number): void {
     for (const [errorMsg, timestamps] of this.errorTracker) {
       this.errorTracker.set(
