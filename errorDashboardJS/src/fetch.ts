@@ -41,7 +41,7 @@ export const errorDashboardFetch = async ({
   } else {
     isSuccess = true;
   }
-  isError = true;
+  isError = false;
 
   return { isSuccess, isError };
 };
