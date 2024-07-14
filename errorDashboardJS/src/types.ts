@@ -9,6 +9,7 @@ export type ErrorResponseType = {
 export type CreateErrorRequestType = {
   userAffected?: string;
   message: string;
+  userAgent: string;
   stackTrace?: string;
   tags?: Tag[];
 };

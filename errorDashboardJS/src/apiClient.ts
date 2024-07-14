@@ -49,17 +49,19 @@ export class ErrorDashboardClient {
 
     if (this.errorTracker.duplicateCheck(message, currentTime)) {
       configs.verbose && console.log("Duplicate error detected, not sending");
-      return { isError: false, isSuccess: false };
+      return { isError: true, isSuccess: false };
     }
 
     let errorStack: string | undefined;
     errorStack = error.stack;
 
     let userAffected = this.configs.user;
+    let userAgent = navigator.userAgent;
 
     const buildError: CreateErrorRequestType = {
       userAffected: userAffected,
       stackTrace: errorStack,
+      userAgent: userAgent,
       message: message,
       tags: tags,
     };
