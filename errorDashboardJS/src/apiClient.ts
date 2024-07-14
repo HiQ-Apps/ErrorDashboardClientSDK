@@ -75,15 +75,12 @@ export class ErrorDashboardClient {
     });
 
     if (isSuccess) {
+      configs.verbose && console.log("Data sent to Higuard");
       this.errorTracker.addTimestamp(message, currentTime);
     }
 
     if (isError && configs.verbose) {
       console.log("Error sending data to Higuard");
-    }
-
-    if (isSuccess && configs.verbose) {
-      console.log("Data sent to Higuard");
     }
 
     return { isError, isSuccess };
