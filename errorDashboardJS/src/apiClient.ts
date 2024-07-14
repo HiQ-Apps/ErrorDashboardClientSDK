@@ -1,7 +1,12 @@
 import { errorDashboardFetch } from "./fetch";
 import { configs, type Configs } from "./configs";
 import { baseUrl } from "./environment";
-import type { CreateErrorRequestType, Tag, ErrorResponseType } from "./types";
+import type {
+  CreateErrorRequestType,
+  Tag,
+  ErrorResponseType,
+  Primitive,
+} from "./types";
 import { ErrorTracker } from "./errorTracker";
 
 interface InitializeClient {
@@ -46,12 +51,14 @@ export class ErrorDashboardClient {
    * @param {Error} error - Error object to be sent.
    * @param {string} message - Error message used to identify the error.
    * @param {Tag[]} [tags] - Additional tags to be sent with the error.
+   * @param {string} attachUser - Should key value name of the cookie or header that contains the user.
    * @returns {Promise<ErrorResponseType>} - Returns an object indicating if there was an error or success.
    */
   async sendError(
     error: Error,
     message: string,
-    tags?: Tag[]
+    tags?: Tag[],
+    attachUser?: string
   ): Promise<ErrorResponseType> {
     const currentTime = Date.now();
 
@@ -62,7 +69,7 @@ export class ErrorDashboardClient {
     }
 
     let errorStack: string | undefined = error.stack;
-    let userAffected = this.configs.user;
+    let userAffected: string | undefined = attachUser;
     let userAgent = navigator.userAgent;
 
     const buildError: CreateErrorRequestType = {
