@@ -1,4 +1,4 @@
-import { CreateErrorRequestType } from "./types";
+import { CreateErrorRequestType, ErrorResponseType } from "./types";
 
 interface CustomFetchProps {
   clientSecret: string;
@@ -9,11 +9,6 @@ interface CustomFetchProps {
   body?: CreateErrorRequestType;
 }
 
-type ResponseType = {
-  isSuccess?: boolean;
-  isError?: boolean;
-};
-
 export const errorDashboardFetch = async ({
   clientSecret,
   clientId,
@@ -21,7 +16,7 @@ export const errorDashboardFetch = async ({
   headers = {},
   endpoint,
   body,
-}: CustomFetchProps): Promise<ResponseType> => {
+}: CustomFetchProps): Promise<ErrorResponseType> => {
   let isError = false;
   let isSuccess = false;
   const url = new URL(endpoint);
