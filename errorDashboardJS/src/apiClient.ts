@@ -1,11 +1,8 @@
 import { errorDashboardFetch } from "./fetch";
-import { dateIsWithinHour } from "./utils";
 import { configs, type Configs } from "./configs";
 import { baseUrl } from "./environment";
-import type { CreateErrorRequestType, Tag, Primitive } from "./types";
-
-type deduplicateKey = Set<string | Date>
-type deduplicateHashMap = Map<deduplicateKey, number>
+import type { CreateErrorRequestType, Tag, ErrorResponseType } from "./types";
+import { ErrorTracker } from "./errorTracker";
 
 interface InitializeClient {
   clientId: string;
@@ -16,41 +13,49 @@ export class ErrorDashboardClient {
   private clientId: string;
   private clientSecret: string;
   private configs: Configs;
-  private deduplicateHashMap: deduplicateHashMap;
+  private errorTracker: ErrorTracker;
 
-  // Get API clientId and clientSecret from HiGuard's namespace services
-  // Deduplicate Hashmap
-
+  // Initialize the client
+  // @obj: Object containing clientId and clientSecret
+  // @returns: void
   constructor(obj: InitializeClient) {
     this.clientId = obj.clientId;
     this.clientSecret = obj.clientSecret;
     this.configs = configs;
-    // this.deduplicateHashMap = {}
+    this.errorTracker = new ErrorTracker(this.configs.maxAge);
+    this.setupPeriodicCleanup();
   }
 
-  duplicateCheck(error: Error, message: string, tags?: Tag[]){
-    if (message in this.deduplicateHashMap){
-      const foundError = this.deduplicateHashMap[message]
-      const now = new Date()
+  // Intervaled cleanup of old errors
+  // @returns: void
+  private setupPeriodicCleanup(): void {
+    setInterval(() => {
+      const now = Date.now();
+      this.errorTracker.cleanOldTimestamps(now);
+    }, this.errorTracker.maxAge);
+  }
 
-      if (foundError.lastSeen) {
-        // if (!dateIsWithinHour(foundError.lastSeen))
-          // this.deduplicateHashMap[(message, now)][count] += 1
-      }
+  // Send error to the dashboard
+  // @error: Error type object
+  // @message: Error message used to identify error
+  // @tags: Additional tags to be sent with the error
+  // @returns: { isError: boolean, isSuccess: boolean } if dev wants to handle the response
+  async sendError(
+    error: Error,
+    message: string,
+    tags?: Tag[]
+  ): Promise<ErrorResponseType> {
+    const currentTime = Date.now();
+
+    if (this.errorTracker.duplicateCheck(message, currentTime)) {
+      configs.verbose && console.log("Duplicate error detected, not sending");
+      return { isError: false, isSuccess: false };
     }
-  }
 
-
-  // Send Error method for sending Error type data to Higuard
-  // @error: Error type
-  // @message: This will be the name displayed on the dashboard. Could be the Error name, custom name ETC.
-  // @tags: Key and value for tag identifiers
-  async sendError(error: Error, message: string, tags?: Tag[]) {
     let errorStack: string | undefined;
-    
-    errorStack = error.stack || "Error stack not found";
+    errorStack = error.stack;
 
-    let userAffected = this.configs.user
+    let userAffected = this.configs.user;
 
     const buildError: CreateErrorRequestType = {
       userAffected: userAffected,
@@ -67,20 +72,25 @@ export class ErrorDashboardClient {
       body: buildError,
     });
 
+    if (isSuccess) {
+      this.errorTracker.addTimestamp(message, currentTime);
+    }
+
     if (isError && configs.verbose) {
-      console.log('Error sending data to Higuard')
+      console.log("Error sending data to Higuard");
     }
 
     if (isSuccess && configs.verbose) {
-      console.log('Data sent to Higuard')
+      console.log("Data sent to Higuard");
     }
 
     return { isError, isSuccess };
   }
 
-  // Should be used to override sdk configurations
+  // Override default configurations
+  // @newConfigs: Partial configurations to be overridden
+  // @returns: void
   overrideConfigs(newConfigs: Partial<Configs>) {
     this.configs = { ...this.configs, ...newConfigs };
   }
-
 }

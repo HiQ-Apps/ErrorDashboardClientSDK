@@ -1,6 +1,11 @@
 export type Primitive = number | string | boolean | undefined | null;
 export type Tag = { tagKey: string; tagValue: Primitive };
 
+export type ErrorResponseType = {
+  isSuccess?: boolean;
+  isError?: boolean;
+};
+
 export type CreateErrorRequestType = {
   userAffected?: string;
   message: string;
@@ -14,6 +19,4 @@ export type CreateErrorDto = {
   tags?: Tag[];
 };
 
-export type DeduplicateType = {
-  
-}
+export type DeduplicateType = {};
