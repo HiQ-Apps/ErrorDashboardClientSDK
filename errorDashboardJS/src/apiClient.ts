@@ -61,9 +61,7 @@ export class ErrorDashboardClient {
       return { isError: true, isSuccess: false };
     }
 
-    let errorStack: string | undefined;
-    errorStack = error.stack;
-
+    let errorStack: string | undefined = error.stack;
     let userAffected = this.configs.user;
     let userAgent = navigator.userAgent;
 
