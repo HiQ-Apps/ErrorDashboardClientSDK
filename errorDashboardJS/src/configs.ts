@@ -5,7 +5,6 @@ export interface Configs {
 }
 
 // Configurations
-// @user: Defaulted to undefined. The user affected by the error
 // @verbose: Defaulted to false. Adds console.logs and console.errors
 // @samplingRate: How many of duplicate requests should be allowed per minute
 // @maxAge: How long should the error be stored in memory (in milliseconds)
