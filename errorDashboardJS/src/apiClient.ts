@@ -1,11 +1,13 @@
+import { parseUserAgent } from "./utils";
 import { errorDashboardFetch } from "./fetch";
-import { configs, type Configs } from "./configs";
+import { Configuration, type Configs } from "./configs";
 import { baseUrl } from "./environment";
 import type {
-  CreateErrorRequestType,
   Tag,
   ErrorResponseType,
-  Primitive,
+  CreateErrorRequestSchema,
+  UserAgentType,
+  IdType,
 } from "./types";
 import { ErrorTracker } from "./errorTracker";
 
@@ -14,13 +16,10 @@ interface InitializeClient {
   clientSecret: string;
 }
 
-/**
- * Class representing a client for the error dashboard.
- */
 export class ErrorDashboardClient {
   private clientId: string;
   private clientSecret: string;
-  private configs: Configs;
+  private configs: Configuration;
   private errorTracker: ErrorTracker;
 
   /**
@@ -30,8 +29,8 @@ export class ErrorDashboardClient {
   constructor(obj: InitializeClient) {
     this.clientId = obj.clientId;
     this.clientSecret = obj.clientSecret;
-    this.configs = configs;
-    this.errorTracker = new ErrorTracker(this.configs.maxAge);
+    this.configs = new Configuration();
+    this.errorTracker = new ErrorTracker(this.configs.getConfig("maxAge"));
     this.setupPeriodicCleanup();
   }
 
@@ -51,31 +50,44 @@ export class ErrorDashboardClient {
    * @param {Error} error - Error object to be sent.
    * @param {string} message - Error message used to identify the error.
    * @param {Tag[]} [tags] - Additional tags to be sent with the error.
-   * @param {string} attachUser - Should key value name of the cookie or header that contains the user.
+   * @param {string} attachUser - Add a user id to the error.
+   * @param {boolean} attachUserAgent - Defaulted to false. Add user agent information to the error.
    * @returns {Promise<ErrorResponseType>} - Returns an object indicating if there was an error or success.
    */
   async sendError(
     error: Error,
     message: string,
-    tags?: Tag[],
-    attachUser?: string
+    tags: Tag[] = [],
+    attachUser?: IdType,
+    attachUserAgent: boolean = false
   ): Promise<ErrorResponseType> {
     const currentTime = Date.now();
 
     if (this.errorTracker.duplicateCheck(message, currentTime)) {
-      this.configs.verbose &&
+      this.configs.getConfig("verbose") &&
         console.log("Duplicate error detected, not sending");
       return { isError: true, isSuccess: false };
     }
 
     let errorStack: string | undefined = error.stack;
-    let userAffected: string | undefined = attachUser;
-    let userAgent = navigator.userAgent;
+    let userAffected: IdType | undefined = attachUser;
 
-    const buildError: CreateErrorRequestType = {
-      userAffected: userAffected,
-      stackTrace: errorStack,
-      userAgent: userAgent,
+    if (
+      this.configs.getConfig("environment") == "web" &&
+      this.configs.getConfig("includeOpinionatedTags")
+    ) {
+      let userAgent: string | undefined = navigator.userAgent;
+      if (attachUserAgent && userAgent) {
+        const parsedUserAgent: UserAgentType = parseUserAgent(userAgent);
+        for (const [key, value] of Object.entries(parsedUserAgent)) {
+          tags.push({ tagKey: key, tagValue: value });
+        }
+      }
+    }
+
+    const buildError: CreateErrorRequestSchema = {
+      user_affected: userAffected,
+      stack_trace: errorStack,
       message: message,
       tags: tags,
     };
@@ -89,11 +101,11 @@ export class ErrorDashboardClient {
     });
 
     if (isSuccess) {
-      this.configs.verbose && console.log("Data sent to Higuard");
+      this.configs.getConfig("verbose") && console.log("Data sent to Higuard");
       this.errorTracker.addTimestamp(message, currentTime);
     }
 
-    if (isError && this.configs.verbose) {
+    if (isError && this.configs.getConfig("verbose")) {
       console.log("Error sending data to Higuard");
     }
 
@@ -106,6 +118,8 @@ export class ErrorDashboardClient {
    * @returns {void}
    */
   overrideConfigs(newConfigs: Partial<Configs>): void {
-    this.configs = { ...this.configs, ...newConfigs };
+    Object.entries(newConfigs).forEach(([key, value]) => {
+      this.configs.setConfig(key as keyof Configs, value as any);
+    });
   }
 }

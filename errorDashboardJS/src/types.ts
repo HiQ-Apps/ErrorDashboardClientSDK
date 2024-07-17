@@ -1,4 +1,5 @@
 export type Primitive = number | string | boolean | undefined | null;
+export type IdType = string | number;
 export type Tag = { tagKey: string; tagValue: Primitive };
 
 export type ErrorResponseType = {
@@ -6,11 +7,10 @@ export type ErrorResponseType = {
   isError?: boolean;
 };
 
-export type CreateErrorRequestType = {
-  userAffected?: string;
+export type CreateErrorRequestSchema = {
+  user_affected?: IdType;
   message: string;
-  userAgent: string;
-  stackTrace?: string;
+  stack_trace?: string;
   tags?: Tag[];
 };
 
@@ -18,4 +18,12 @@ export type CreateErrorDto = {
   userAffected?: string;
   message: string;
   tags?: Tag[];
+};
+
+export type UserAgentType = {
+  browserName: string;
+  browserVersion: string;
+  operatingSystem: string;
+  osVersion: string;
+  device?: string;
 };

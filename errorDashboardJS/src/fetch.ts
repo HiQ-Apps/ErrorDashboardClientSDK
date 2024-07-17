@@ -1,4 +1,4 @@
-import type { CreateErrorRequestType, ErrorResponseType } from "./types";
+import type { ErrorResponseType, CreateErrorRequestSchema } from "./types";
 
 interface CustomFetchProps {
   clientSecret: string;
@@ -6,7 +6,7 @@ interface CustomFetchProps {
   method: string;
   headers?: HeadersInit;
   endpoint: string;
-  body?: CreateErrorRequestType;
+  body?: CreateErrorRequestSchema;
 }
 
 /**
@@ -16,7 +16,7 @@ interface CustomFetchProps {
  * @param {string} CustomFetchProps.method - HTTP method to be used.
  * @param {HeadersInit} [CustomFetchProps.headers] - Additional headers to be sent.
  * @param {string} CustomFetchProps.endpoint - Endpoint to send the data.
- * @param {CreateErrorRequestType} [CustomFetchProps.body] - Body of the request.
+ * @param {CreateErrorRequestSchema} [CustomFetchProps.body] - Body of the request.
  * @returns {Promise<ErrorResponseType>} - Returns isError and isSuccess based on result of function.
  */
 export const errorDashboardFetch = async ({
