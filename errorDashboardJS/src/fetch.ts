@@ -1,4 +1,4 @@
-import { CreateErrorRequestType } from "./types";
+import type { ErrorResponseType, CreateErrorRequestSchema } from "./types";
 
 interface CustomFetchProps {
   clientSecret: string;
@@ -6,14 +6,19 @@ interface CustomFetchProps {
   method: string;
   headers?: HeadersInit;
   endpoint: string;
-  body?: CreateErrorRequestType;
+  body?: CreateErrorRequestSchema;
 }
 
-type ResponseType = {
-  isSuccess?: boolean;
-  isError?: boolean;
-};
-
+/**
+ * Fetch function to send errors to the dashboard server.
+ * @param {string} CustomFetchProps.clientSecret - Client secret for the dashboard server.
+ * @param {string} CustomFetchProps.clientId - Client ID for the dashboard server.
+ * @param {string} CustomFetchProps.method - HTTP method to be used.
+ * @param {HeadersInit} [CustomFetchProps.headers] - Additional headers to be sent.
+ * @param {string} CustomFetchProps.endpoint - Endpoint to send the data.
+ * @param {CreateErrorRequestSchema} [CustomFetchProps.body] - Body of the request.
+ * @returns {Promise<ErrorResponseType>} - Returns isError and isSuccess based on result of function.
+ */
 export const errorDashboardFetch = async ({
   clientSecret,
   clientId,
@@ -21,14 +26,16 @@ export const errorDashboardFetch = async ({
   headers = {},
   endpoint,
   body,
-}: CustomFetchProps): Promise<ResponseType> => {
+}: CustomFetchProps): Promise<ErrorResponseType> => {
   let isError = false;
   let isSuccess = false;
   const url = new URL(endpoint);
 
-  url.searchParams.append("client_id", clientId);
+  headers = {
+    client_id: clientId,
+  };
 
-  const combinedHeaders = {
+  const combinedHeaders: HeadersInit = {
     Authorization: `${clientSecret}`,
     "Content-Type": "application/json",
     ...headers,
@@ -40,13 +47,16 @@ export const errorDashboardFetch = async ({
     body: body ? JSON.stringify(body) : undefined,
   };
 
-  const response = await fetch(url, options);
-  if (!response.ok) {
+  try {
+    const response = await fetch(url.toString(), options);
+    if (!response.ok) {
+      isError = true;
+    } else {
+      isSuccess = true;
+    }
+  } catch (error) {
     isError = true;
-  } else {
-    isSuccess = true;
   }
-  isError = true;
 
   return { isSuccess, isError };
 };

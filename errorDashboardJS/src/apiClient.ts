@@ -1,11 +1,15 @@
+import { parseUserAgent } from "./utils";
 import { errorDashboardFetch } from "./fetch";
-import { dateIsWithinHour } from "./utils";
-import { configs, type Configs } from "./configs";
+import { Configuration, type Configs } from "./configs";
 import { baseUrl } from "./environment";
-import type { CreateErrorRequestType, Tag, Primitive } from "./types";
-
-type deduplicateKey = Set<string | Date>
-type deduplicateHashMap = Map<deduplicateKey, number>
+import type {
+  Tag,
+  ErrorResponseType,
+  CreateErrorRequestSchema,
+  UserAgentType,
+  IdType,
+} from "./types";
+import { ErrorTracker } from "./errorTracker";
 
 interface InitializeClient {
   clientId: string;
@@ -13,48 +17,90 @@ interface InitializeClient {
 }
 
 export class ErrorDashboardClient {
+  private static instance: ErrorDashboardClient;
   private clientId: string;
   private clientSecret: string;
-  private configs: Configs;
-  private deduplicateHashMap: deduplicateHashMap;
+  private configs: Configuration;
+  private errorTracker: ErrorTracker;
 
-  // Get API clientId and clientSecret from HiGuard's namespace services
-  // Deduplicate Hashmap
-
-  constructor(obj: InitializeClient) {
+  /**
+   * Initialize the client.
+   * @param {InitializeClient} obj - Object containing clientId and clientSecret.
+   */
+  private constructor(obj: InitializeClient) {
     this.clientId = obj.clientId;
     this.clientSecret = obj.clientSecret;
-    this.configs = configs;
-    // this.deduplicateHashMap = {}
+    this.configs = new Configuration();
+    this.errorTracker = new ErrorTracker(this.configs.getConfig("maxAge"));
+    this.setupPeriodicCleanup();
   }
 
-  duplicateCheck(error: Error, message: string, tags?: Tag[]){
-    if (message in this.deduplicateHashMap){
-      const foundError = this.deduplicateHashMap[message]
-      const now = new Date()
+  /**
+   * Get the instance of ErrorDashboardClient.
+   * @param {InitializeClient} obj - Object containing clientId and clientSecret.
+   * @returns {ErrorDashboardClient} - The created instance.
+   */
+  static initialize(obj: InitializeClient): ErrorDashboardClient {
+    if (!ErrorDashboardClient.instance) {
+      ErrorDashboardClient.instance = new ErrorDashboardClient(obj);
+    }
+    return ErrorDashboardClient.instance;
+  }
 
-      if (foundError.lastSeen) {
-        // if (!dateIsWithinHour(foundError.lastSeen))
-          // this.deduplicateHashMap[(message, now)][count] += 1
+  /**
+   * Set up periodic cleanup using config's maxAge.
+   * @returns {void}
+   */
+  private setupPeriodicCleanup(): void {
+    setInterval(() => {
+      const now = Date.now();
+      this.errorTracker.cleanOldTimestamps(now);
+    }, this.errorTracker.maxAge);
+  }
+
+  /**
+   * Send error to the dashboard server.
+   * @param {Error} error - Error object to be sent.
+   * @param {string} message - Error message used to identify the error.
+   * @param {Tag[]} [tags] - Additional tags to be sent with the error.
+   * @param {string} attachUser - Add a user id to the error.
+   * @param {boolean} attachUserAgent - Defaulted to false. Add user agent information to the error.
+   * @returns {Promise<ErrorResponseType>} - Returns an object indicating if there was an error or success.
+   */
+  async sendError(
+    error: Error,
+    message: string,
+    tags: Tag[] = [],
+    attachUser?: IdType,
+    attachUserAgent: boolean = false
+  ): Promise<ErrorResponseType> {
+    const currentTime = Date.now();
+
+    if (this.errorTracker.duplicateCheck(message, currentTime)) {
+      this.configs.getConfig("verbose") &&
+        console.log("Duplicate error detected, not sending");
+      return { isError: true, isSuccess: false };
+    }
+
+    let errorStack: string | undefined = error.stack;
+    let userAffected: IdType | undefined = attachUser;
+
+    if (
+      this.configs.getConfig("environment") == "web" &&
+      this.configs.getConfig("includeOpinionatedTags")
+    ) {
+      let userAgent: string | undefined = navigator.userAgent;
+      if (attachUserAgent && userAgent) {
+        const parsedUserAgent: UserAgentType = parseUserAgent(userAgent);
+        for (const [key, value] of Object.entries(parsedUserAgent)) {
+          tags.push({ tagKey: key, tagValue: value });
+        }
       }
     }
-  }
 
-
-  // Send Error method for sending Error type data to Higuard
-  // @error: Error type
-  // @message: This will be the name displayed on the dashboard. Could be the Error name, custom name ETC.
-  // @tags: Key and value for tag identifiers
-  async sendError(error: Error, message: string, tags?: Tag[]) {
-    let errorStack: string | undefined;
-    
-    errorStack = error.stack || "Error stack not found";
-
-    let userAffected = this.configs.user
-
-    const buildError: CreateErrorRequestType = {
-      userAffected: userAffected,
-      stackTrace: errorStack,
+    const buildError: CreateErrorRequestSchema = {
+      user_affected: userAffected,
+      stack_trace: errorStack,
       message: message,
       tags: tags,
     };
@@ -67,20 +113,70 @@ export class ErrorDashboardClient {
       body: buildError,
     });
 
-    if (isError && configs.verbose) {
-      console.log('Error sending data to Higuard')
+    if (isSuccess) {
+      this.configs.getConfig("verbose") && console.log("Data sent to Higuard");
+      this.errorTracker.addTimestamp(message, currentTime);
     }
 
-    if (isSuccess && configs.verbose) {
-      console.log('Data sent to Higuard')
+    if (isError && this.configs.getConfig("verbose")) {
+      console.log("Error sending data to Higuard");
     }
 
     return { isError, isSuccess };
   }
 
-  // Should be used to override sdk configurations
-  overrideConfigs(newConfigs: Partial<Configs>) {
-    this.configs = { ...this.configs, ...newConfigs };
+  /**
+   * Override default configurations.
+   * @param {Partial<Configs>} newConfigs - Partial configurations to be overridden.
+   * @returns {void}
+   */
+  overrideConfigs(newConfigs: Partial<Configs>): void {
+    Object.entries(newConfigs).forEach(([key, value]) => {
+      this.configs.setConfig(key as keyof Configs, value as any);
+    });
   }
 
+  /**
+   * Static method to send error using the created instance.
+   * @param {Error} error - Error object to be sent.
+   * @param {string} message - Error message used to identify the error.
+   * @param {Tag[]} [tags] - Additional tags to be sent with the error.
+   * @param {IdType} [attachUser] - Add a user id to the error.
+   * @param {boolean} [attachUserAgent] - Defaulted to false. Add user agent information to the error.
+   * @returns {Promise<ErrorResponseType>} - Returns an object indicating if there was an error or success.
+   */
+  static async sendError(
+    error: Error,
+    message: string,
+    tags: Tag[] = [],
+    attachUser?: IdType,
+    attachUserAgent: boolean = false
+  ): Promise<ErrorResponseType> {
+    if (!ErrorDashboardClient.instance) {
+      throw new Error(
+        "ErrorDashboardClient not initialized. Call initialize() first."
+      );
+    }
+    return ErrorDashboardClient.instance.sendError(
+      error,
+      message,
+      tags,
+      attachUser,
+      attachUserAgent
+    );
+  }
+
+  /**
+   * Static method to override configurations using the instance.
+   * @param {Partial<Configs>} newConfigs - Partial configurations to be overridden.
+   * @returns {void}
+   */
+  static overrideConfigs(newConfigs: Partial<Configs>): void {
+    if (!ErrorDashboardClient.instance) {
+      throw new Error(
+        "ErrorDashboardClient not initialized. Call initialize() first."
+      );
+    }
+    ErrorDashboardClient.instance.overrideConfigs(newConfigs);
+  }
 }

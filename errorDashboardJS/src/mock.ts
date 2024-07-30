@@ -10,3 +10,9 @@ const mockErrorStack = `Error: An unexpected error occurred
     at Function.Module._load (internal/modules/cjs/loader.js:585:3)
     at Function.Module.runMain (internal/modules/cjs/loader.js:831:12)
     `;
+
+const mockErrorTracker = {
+  "Error message": [1720964158, 1720964168, 1720964178, 1720964188],
+  "Error message 2": [1720964158, 1720964168, 1720964178, 1720964188],
+  "Error message 3": [1720964158, 1720964168, 1720964178, 1720964188],
+};
