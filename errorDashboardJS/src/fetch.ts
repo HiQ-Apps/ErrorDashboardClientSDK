@@ -31,7 +31,9 @@ export const errorDashboardFetch = async ({
   let isSuccess = false;
   const url = new URL(endpoint);
 
-  url.searchParams.append("client_id", clientId);
+  headers = {
+    client_id: clientId,
+  };
 
   const combinedHeaders: HeadersInit = {
     Authorization: `${clientSecret}`,

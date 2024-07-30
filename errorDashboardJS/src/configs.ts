@@ -6,13 +6,6 @@ export interface Configs {
   includeOpinionatedTags: boolean;
 }
 
-// Configurations
-// @verbose: Defaulted to false. Adds console.logs and console.errors
-// @samplingRate: How many of duplicate requests should be allowed per minute
-// @maxAge: How long should the error be stored in memory (in milliseconds)
-// @environment: Defaulted to "web". Can be "web" or "node". Used to differentiate between web and node environments.
-//    Choosing either will include additional behavior based on the environment
-// @includeOpinionatedTags: Defaulted to false. Adds opinionated tags to the error (User-Agent, Stack Trace details)
 export let defaultConfigs: Configs = {
   verbose: false,
   samplingRate: 2,
@@ -24,6 +17,11 @@ export let defaultConfigs: Configs = {
 /**
  * Configuration class to handle configurations
   @param {Partial<Configs>} [configs] - Optional configurations to be set.
+    @param {boolean} [configs.verbose] - Defaulted to false. Adds console.logs and console.errors
+    @param {number} [configs.samplingRate] - How many of duplicate requests should be allowed per minute
+    @param {number} [configs.maxAge] - How long should the error be stored in memory (in milliseconds)
+    @param {"web" | "node"} [configs.environment] - Defaulted to "web". Can be "web" or "node". Used to differentiate between web and node environments.
+    @param {boolean} [configs.includeOpinionatedTags] - Defaulted to false. Adds opinionated tags to the error (User-Agent, Stack Trace details)
   @returns {Configuration} - Returns a Configuration object.
 */
 export class Configuration {

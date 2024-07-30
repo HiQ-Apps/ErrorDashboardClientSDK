@@ -21,9 +21,9 @@ export type CreateErrorDto = {
 };
 
 export type UserAgentType = {
-  browserName: string;
-  browserVersion: string;
-  operatingSystem: string;
-  osVersion: string;
+  browserName?: string;
+  browserVersion?: string;
+  operatingSystem?: string;
+  osVersion?: string;
   device?: string;
 };

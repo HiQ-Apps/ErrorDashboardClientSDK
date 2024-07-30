@@ -17,6 +17,7 @@ interface InitializeClient {
 }
 
 export class ErrorDashboardClient {
+  private static instance: ErrorDashboardClient;
   private clientId: string;
   private clientSecret: string;
   private configs: Configuration;
@@ -26,12 +27,24 @@ export class ErrorDashboardClient {
    * Initialize the client.
    * @param {InitializeClient} obj - Object containing clientId and clientSecret.
    */
-  constructor(obj: InitializeClient) {
+  private constructor(obj: InitializeClient) {
     this.clientId = obj.clientId;
     this.clientSecret = obj.clientSecret;
     this.configs = new Configuration();
     this.errorTracker = new ErrorTracker(this.configs.getConfig("maxAge"));
     this.setupPeriodicCleanup();
+  }
+
+  /**
+   * Get the instance of ErrorDashboardClient.
+   * @param {InitializeClient} obj - Object containing clientId and clientSecret.
+   * @returns {ErrorDashboardClient} - The created instance.
+   */
+  static initialize(obj: InitializeClient): ErrorDashboardClient {
+    if (!ErrorDashboardClient.instance) {
+      ErrorDashboardClient.instance = new ErrorDashboardClient(obj);
+    }
+    return ErrorDashboardClient.instance;
   }
 
   /**
@@ -121,5 +134,49 @@ export class ErrorDashboardClient {
     Object.entries(newConfigs).forEach(([key, value]) => {
       this.configs.setConfig(key as keyof Configs, value as any);
     });
+  }
+
+  /**
+   * Static method to send error using the created instance.
+   * @param {Error} error - Error object to be sent.
+   * @param {string} message - Error message used to identify the error.
+   * @param {Tag[]} [tags] - Additional tags to be sent with the error.
+   * @param {IdType} [attachUser] - Add a user id to the error.
+   * @param {boolean} [attachUserAgent] - Defaulted to false. Add user agent information to the error.
+   * @returns {Promise<ErrorResponseType>} - Returns an object indicating if there was an error or success.
+   */
+  static async sendError(
+    error: Error,
+    message: string,
+    tags: Tag[] = [],
+    attachUser?: IdType,
+    attachUserAgent: boolean = false
+  ): Promise<ErrorResponseType> {
+    if (!ErrorDashboardClient.instance) {
+      throw new Error(
+        "ErrorDashboardClient not initialized. Call initialize() first."
+      );
+    }
+    return ErrorDashboardClient.instance.sendError(
+      error,
+      message,
+      tags,
+      attachUser,
+      attachUserAgent
+    );
+  }
+
+  /**
+   * Static method to override configurations using the instance.
+   * @param {Partial<Configs>} newConfigs - Partial configurations to be overridden.
+   * @returns {void}
+   */
+  static overrideConfigs(newConfigs: Partial<Configs>): void {
+    if (!ErrorDashboardClient.instance) {
+      throw new Error(
+        "ErrorDashboardClient not initialized. Call initialize() first."
+      );
+    }
+    ErrorDashboardClient.instance.overrideConfigs(newConfigs);
   }
 }

@@ -1,5 +1,5 @@
-import * as useragent from "useragent";
-import { DateTime } from "Luxon";
+import { UAParser } from "ua-parser-js";
+import { DateTime } from "luxon";
 import type { UserAgentType } from "./types";
 
 export const dateIsWithinHour = (dateCheck: DateTime<true>): boolean => {
@@ -14,15 +14,15 @@ export const dateIsWithinHour = (dateCheck: DateTime<true>): boolean => {
 };
 
 export const parseUserAgent = (ua: string): UserAgentType => {
-  const agent = useragent.parse(ua);
-  const os = agent.os;
-  const device = agent.device;
+  const agent = new UAParser(ua);
+  const os = agent.getOS();
+  const device = agent.getDevice();
 
   return {
-    browserName: agent.family,
-    browserVersion: agent.toVersion(),
-    operatingSystem: os.family,
-    osVersion: os.toVersion(),
-    device: device.family !== "Other" ? device.family : undefined,
+    browserName: agent.getBrowser().name,
+    browserVersion: agent.getBrowser().version,
+    operatingSystem: os.name,
+    osVersion: os.version,
+    device: device.type,
   };
 };
