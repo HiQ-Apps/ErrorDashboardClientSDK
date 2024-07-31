@@ -10,7 +10,7 @@ export let defaultConfigs: Configs = {
   verbose: false,
   samplingRate: 2,
   maxAge: 20000,
-  environment: "web",
+  environment: "node",
   includeOpinionatedTags: false,
 };
 
@@ -20,7 +20,7 @@ export let defaultConfigs: Configs = {
     @param {boolean} [configs.verbose] - Defaulted to false. Adds console.logs and console.errors
     @param {number} [configs.samplingRate] - How many of duplicate requests should be allowed per minute
     @param {number} [configs.maxAge] - How long should the error be stored in memory (in milliseconds)
-    @param {"web" | "node"} [configs.environment] - Defaulted to "web". Can be "web" or "node". Used to differentiate between web and node environments.
+    @param {"web" | "node"} [configs.environment] - Defaulted to "node". Can be "web" or "node". Used to differentiate between web and node environments.
     @param {boolean} [configs.includeOpinionatedTags] - Defaulted to false. Adds opinionated tags to the error (User-Agent, Stack Trace details)
   @returns {Configuration} - Returns a Configuration object.
 */

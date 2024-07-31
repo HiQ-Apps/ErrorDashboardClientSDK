@@ -38,7 +38,7 @@ export class ErrorDashboardClient {
   /**
    * Get the instance of ErrorDashboardClient.
    * @param {InitializeClient} obj - Object containing clientId and clientSecret.
-   * @returns {ErrorDashboardClient} - The created instance.
+   * @returns {ErrorDashboardClient} - The singleton instance.
    */
   static initialize(obj: InitializeClient): ErrorDashboardClient {
     if (!ErrorDashboardClient.instance) {
@@ -79,6 +79,7 @@ export class ErrorDashboardClient {
     if (this.errorTracker.duplicateCheck(message, currentTime)) {
       this.configs.getConfig("verbose") &&
         console.log("Duplicate error detected, not sending");
+      this.errorTracker.addTimestamp(message, currentTime);
       return { isError: true, isSuccess: false };
     }
 
@@ -113,14 +114,13 @@ export class ErrorDashboardClient {
       body: buildError,
     });
 
-    if (isSuccess) {
-      this.configs.getConfig("verbose") && console.log("Data sent to Higuard");
-      this.errorTracker.addTimestamp(message, currentTime);
-    }
-
-    if (isError && this.configs.getConfig("verbose")) {
+    if (isSuccess && this.configs.getConfig("verbose")) {
+      console.log("Data sent to Higuard");
+    } else if (isError && this.configs.getConfig("verbose")) {
       console.log("Error sending data to Higuard");
     }
+
+    this.errorTracker.addTimestamp(message, currentTime);
 
     return { isError, isSuccess };
   }
