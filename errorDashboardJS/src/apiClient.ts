@@ -114,8 +114,8 @@ export class ErrorDashboardClient {
       body: buildError,
     });
 
-    if (isSuccess) {
-      this.configs.getConfig("verbose") && console.log("Data sent to Higuard");
+    if (isSuccess && this.configs.getConfig("verbose")) {
+      console.log("Data sent to Higuard");
     } else if (isError && this.configs.getConfig("verbose")) {
       console.log("Error sending data to Higuard");
     }
