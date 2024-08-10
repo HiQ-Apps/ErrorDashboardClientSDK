@@ -2,16 +2,16 @@ export interface Configs {
   verbose: boolean;
   samplingRate: number;
   maxAge: number;
-  environment: "web" | "node";
-  includeOpinionatedTags: boolean;
+  retryDelay: number;
+  retryAttempts: number;
 }
 
 export let defaultConfigs: Configs = {
   verbose: false,
   samplingRate: 2,
   maxAge: 20000,
-  environment: "node",
-  includeOpinionatedTags: false,
+  retryDelay: 3000,
+  retryAttempts: 3,
 };
 
 /**
@@ -20,9 +20,9 @@ export let defaultConfigs: Configs = {
     @param {boolean} [configs.verbose] - Defaulted to false. Adds console.logs and console.errors
     @param {number} [configs.samplingRate] - How many of duplicate requests should be allowed per minute
     @param {number} [configs.maxAge] - How long should the error be stored in memory (in milliseconds)
-    @param {"web" | "node"} [configs.environment] - Defaulted to "node". Can be "web" or "node". Used to differentiate between web and node environments.
-    @param {boolean} [configs.includeOpinionatedTags] - Defaulted to false. Adds opinionated tags to the error (User-Agent, Stack Trace details)
-  @returns {Configuration} - Returns a Configuration object.
+    @param {retryDelay} [configs.retryDelay] - How long should we wait after a failure occurs before refetching
+    @param {retryAttempts} [configs.retryAttempts] - How many times should we reattempt reporting after a failure.
+    @returns {Configuration} - Returns a Configuration object.
 */
 export class Configuration {
   private configs: Configs;
@@ -41,6 +41,12 @@ export class Configuration {
     }
     if (key === "maxAge" && typeof value === "number" && value <= 0) {
       throw new Error("maxAge must be a positive number");
+    }
+    if (key === "retryDelay" && typeof value === "number" && value <= 0) {
+      throw new Error("retryDelay must be a positive number");
+    }
+    if (key === "retryAttempts" && typeof value === "number" && value <= 0) {
+      throw new Error("retryAttempts must be a positive number");
     }
     this.configs[key] = value;
   }

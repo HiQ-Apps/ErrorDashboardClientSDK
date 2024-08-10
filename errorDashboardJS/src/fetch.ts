@@ -7,16 +7,20 @@ interface CustomFetchProps {
   headers?: HeadersInit;
   endpoint: string;
   body?: CreateErrorRequestSchema;
+  retryAttempts: number;
+  retryDelay: number;
 }
 
 /**
- * Fetch function to send errors to the dashboard server.
+ * Fetch function to send errors to the dashboard server with retry mechanism.
  * @param {string} CustomFetchProps.clientSecret - Client secret for the dashboard server.
  * @param {string} CustomFetchProps.clientId - Client ID for the dashboard server.
  * @param {string} CustomFetchProps.method - HTTP method to be used.
  * @param {HeadersInit} [CustomFetchProps.headers] - Additional headers to be sent.
  * @param {string} CustomFetchProps.endpoint - Endpoint to send the data.
  * @param {CreateErrorRequestSchema} [CustomFetchProps.body] - Body of the request.
+ * @param {number} [CustomFetchProps.retryAttempts] - Number of retry attempts.
+ * @param {number} [CustomFetchProps.retryDelay] - Delay between retries in milliseconds.
  * @returns {Promise<ErrorResponseType>} - Returns isError and isSuccess based on result of function.
  */
 export const errorDashboardFetch = async ({
@@ -26,12 +30,15 @@ export const errorDashboardFetch = async ({
   headers = {},
   endpoint,
   body,
+  retryAttempts,
+  retryDelay,
 }: CustomFetchProps): Promise<ErrorResponseType> => {
   let isError = false;
   let isSuccess = false;
   const url = new URL(endpoint);
 
   headers = {
+    ...headers,
     client_id: clientId,
   };
 
@@ -47,15 +54,23 @@ export const errorDashboardFetch = async ({
     body: body ? JSON.stringify(body) : undefined,
   };
 
-  try {
-    const response = await fetch(url.toString(), options);
-    if (!response.ok) {
+  for (let attempt = 0; attempt < retryAttempts; attempt++) {
+    try {
+      const response = await fetch(url.toString(), options);
+      if (response.ok) {
+        isSuccess = true;
+        return { isSuccess, isError };
+      } else {
+        isError = true;
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
       isError = true;
-    } else {
-      isSuccess = true;
     }
-  } catch (error) {
-    isError = true;
+
+    if (attempt < retryAttempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
   }
 
   return { isSuccess, isError };
