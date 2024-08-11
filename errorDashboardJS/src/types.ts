@@ -8,9 +8,9 @@ export type ErrorResponseType = {
 };
 
 export type CreateErrorRequestSchema = {
-  user_affected?: IdType;
+  userAffected?: IdType;
   message: string;
-  stack_trace?: string;
+  stackTrace?: string;
   tags?: Tag[];
 };
 

@@ -71,37 +71,24 @@ export class ErrorDashboardClient {
     error: Error,
     message: string,
     tags: Tag[] = [],
-    attachUser?: IdType,
-    attachUserAgent: boolean = false
-  ): Promise<ErrorResponseType> {
+    attachUser?: IdType
+  ): Promise<void> {
     const currentTime = Date.now();
 
     if (this.errorTracker.duplicateCheck(message, currentTime)) {
       this.configs.getConfig("verbose") &&
         console.log("Duplicate error detected, not sending");
-      this.errorTracker.addTimestamp(message, currentTime);
-      return { isError: true, isSuccess: false };
+      return;
     }
 
     let errorStack: string | undefined = error.stack;
     let userAffected: IdType | undefined = attachUser;
+    let retryAttempts: number = this.configs.getConfig("retryAttempts");
+    let retryDelay: number = this.configs.getConfig("retryDelay");
 
-    if (
-      this.configs.getConfig("environment") == "web" &&
-      this.configs.getConfig("includeOpinionatedTags")
-    ) {
-      let userAgent: string | undefined = navigator.userAgent;
-      if (attachUserAgent && userAgent) {
-        const parsedUserAgent: UserAgentType = parseUserAgent(userAgent);
-        for (const [key, value] of Object.entries(parsedUserAgent)) {
-          tags.push({ tagKey: key, tagValue: value });
-        }
-      }
-    }
-
-    const buildError: CreateErrorRequestSchema = {
-      user_affected: userAffected,
-      stack_trace: errorStack,
+    const errorRequestBody: CreateErrorRequestSchema = {
+      userAffected: userAffected,
+      stackTrace: errorStack,
       message: message,
       tags: tags,
     };
@@ -111,18 +98,18 @@ export class ErrorDashboardClient {
       clientId: this.clientId,
       method: "POST",
       endpoint: `${baseUrl}/errors`,
-      body: buildError,
+      body: errorRequestBody,
+      retryAttempts,
+      retryDelay,
     });
 
     if (isSuccess && this.configs.getConfig("verbose")) {
       console.log("Data sent to Higuard");
-    } else if (isError && this.configs.getConfig("verbose")) {
-      console.log("Error sending data to Higuard");
+      this.errorTracker.addTimestamp(message, currentTime);
+    } else if (isError) {
+      this.configs.getConfig("verbose") &&
+        console.log("Error sending data to Higuard");
     }
-
-    this.errorTracker.addTimestamp(message, currentTime);
-
-    return { isError, isSuccess };
   }
 
   /**
@@ -142,28 +129,20 @@ export class ErrorDashboardClient {
    * @param {string} message - Error message used to identify the error.
    * @param {Tag[]} [tags] - Additional tags to be sent with the error.
    * @param {IdType} [attachUser] - Add a user id to the error.
-   * @param {boolean} [attachUserAgent] - Defaulted to false. Add user agent information to the error.
    * @returns {Promise<ErrorResponseType>} - Returns an object indicating if there was an error or success.
    */
   static async sendError(
     error: Error,
     message: string,
     tags: Tag[] = [],
-    attachUser?: IdType,
-    attachUserAgent: boolean = false
-  ): Promise<ErrorResponseType> {
+    attachUser?: IdType
+  ): Promise<void> {
     if (!ErrorDashboardClient.instance) {
       throw new Error(
         "ErrorDashboardClient not initialized. Call initialize() first."
       );
     }
-    return ErrorDashboardClient.instance.sendError(
-      error,
-      message,
-      tags,
-      attachUser,
-      attachUserAgent
-    );
+    return;
   }
 
   /**
