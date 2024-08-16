@@ -4,7 +4,7 @@ import type { UserAgentType } from "./types";
 
 export const dateIsWithinHour = (dateCheck: DateTime<true>): boolean => {
   let currentDateTime = DateTime.now();
-  let lastHour = currentDateTime.minus({ minutes: 1 });
+  let lastHour = currentDateTime.minus({ minutes: 60 });
 
   if (dateCheck >= lastHour && dateCheck <= currentDateTime) {
     return true;
