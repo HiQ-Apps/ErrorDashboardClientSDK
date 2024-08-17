@@ -1,3 +1,6 @@
 [submodule "errorDashboardJS"]
 	path = errorDashboardJS
 	url = https://github.com/HiQ-Apps/errorDashboardJS
+[submodule "errorDashboardPython"]
+	path = errorDashboardPython
+	url = https://github.com/HiQ-Apps/errorDashboardPython
