@@ -4,3 +4,6 @@
 [submodule "error_dashboard_python"]
 	path = error_dashboard_python
 	url = https://github.com/HiQ-Apps/error_dashboard_python
+[submodule "error_dashboard_rust"]
+	path = error_dashboard_rust
+	url = https://github.com/HiQ-Apps/error_dashboard_sdk_rust
